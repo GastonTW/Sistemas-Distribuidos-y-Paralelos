@@ -161,9 +161,9 @@ void gravitacion(void *arg){
 	int paso;
 	for(paso=0; paso<pasos;(paso+delta_tiempo)){
 		calcularFuerzas(cuerpos,N,delta_tiempo,id);
-		//barrera1
+		pthread_barrier_wait(&barrera);
 		moverCuerpos(cuerpos,N,delta_tiempo,id);	
-		//barrera2
+		pthread_barrier_wait(&barrera);
 	}
 	
 }
@@ -302,6 +302,8 @@ void finalizar(void){
 	free(matriz_fuerzaX);
 	free(matriz_fuerzaY);
 	free(matriz_fuerzaZ);
+	pthread_barrier_destroy(&barrera);
+	pthread_mutex_destroy(&mutex);
 }
 
 int main(int argc, char * argv[]) {
