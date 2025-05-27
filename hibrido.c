@@ -2,11 +2,11 @@
 //		gcc -o n_body_simple_NOGL n_body_simple.c -lm
 // Ejecutar:
 //		./n_body_simple_NOGL <nro de cuerpos> <DT> <Pasos>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <math.h>
 #include <sys/time.h>
 
