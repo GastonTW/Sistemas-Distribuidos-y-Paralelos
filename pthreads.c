@@ -121,16 +121,17 @@ float F;
 }
 
 void moverCuerpos(cuerpo_t *cuerpos, int N, int dt,int id){
- 	int cuerpo,i;
+ 	int cuerpo,i,j;
 	
 	for(cuerpo = id; cuerpo<N ; cuerpo+=T){
 
 		for (i=0;i<T;i++){
 			fuerza_totalX[i] += matriz_fuerzaX[i*N+cuerpo];
 			fuerza_totalY[i] += matriz_fuerzaY[i*N+cuerpo];
-			fuerza_totalZ[i] += matriz_fuerzaZ[i*N+cuerpo];
-			//PONER MATRIZ FUERZA EN 0
-
+			//fuerza_totalZ[i] += matriz_fuerzaZ[i*N+cuerpo];
+			matriz_fuerzaX[i*N+cuerpo] = 0.0;
+			matriz_fuerzaY[i*N+cuerpo] = 0.0;
+			//matriz_fuerzaZ[i*N+cuerpo] = 0.0;
 		}
 		
         fuerza_totalX[cuerpo] *= 1/cuerpos[cuerpo].masa;
