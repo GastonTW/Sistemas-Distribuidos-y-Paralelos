@@ -74,10 +74,61 @@ int T;
 pthread_mutex_t mutex;
 pthread_barrier_t barrera;
 float *matriz_fuerzaX,*matriz_fuerzaY,*matriz_fuerzaZ;
+int rank;
 
 //
 // Funciones para Algoritmo de gravitacion
 //
+int funcion_mpi(int rank){
+    N = atoi(argv[1]);
+	delta_tiempo = atof(argv[2]);
+	pasos = atoi(argv[3]);
+    T = atoi(argv[4]);
+
+    if (rank == 0) {
+        // MASTER
+        for(paso = 0, paso <= pasos; paso + delta_tiempo){
+            Inicializar las tareas
+            for(i=0; i < N/(T-1) + T; i++){
+                MPI_Srecv(idW, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                limite[0]+=N/T;
+                limite[1]+=N/T;
+                MPI_Ssend(limite, 2, MPI_INT, idW, i, MPI_COMM_WORLD);
+            }
+        }
+    } else {
+        // WORKERS
+        for(int id = 0; id<T; id++){ // ELEGIR NOMBRE PARAMETRO HILOS
+            pthread_create(&hilo[id], NULL, &gravitacion, (void*)id);
+        }
+    }
+
+	pthread_t hilo[T];
+	int hilo_id[T];
+
+	pthread_mutex_init(&mutex,NULL); // BORRAR
+    pthread_barrier_init(&barrera,NULL,T);
+
+	cuerpos = (cuerpo_t*)malloc(sizeof(cuerpo_t)*N);
+	fuerza_totalX = (float*)malloc(sizeof(float)*N);
+	fuerza_totalY = (float*)malloc(sizeof(float)*N);
+	fuerza_totalZ = (float*)malloc(sizeof(float)*N);
+	matriz_fuerzaX = (float*)malloc(sizeof(float)*N*T);
+	matriz_fuerzaY = (float*)malloc(sizeof(float)*N*T);
+	matriz_fuerzaZ = (float*)malloc(sizeof(float)*N*T);
+
+	inicializarCuerpos(cuerpos,N);
+	
+	tIni = dwalltime(); 
+	
+	//
+    for(int id = 0; id<T; id++){
+        pthread_join(hilo[id], NULL);
+    }
+
+	tFin =	dwalltime();
+	return tFin - tIni;
+}
 
 void calcularFuerzas(cuerpo_t *cuerpos, int N, int dt,int id){
 int cuerpo1, cuerpo2;
@@ -157,9 +208,43 @@ void gravitacionCPU(cuerpo_t *cuerpos, int N, int dt){
 	calcularFuerzas(cuerpos,N,dt);
 	moverCuerpos(cuerpos,N,dt);
 }
+
 void gravitacion(void *arg){
 	int id=(int*)arg;
 	int paso;
+    int limite[2];
+    T3Dpoint m[bodies] p[bodies], v[bodies], f[bodies]; // y otras variables;
+    for(timeSteps = start, timeSteps <= finish; timeSteps + DT){ // REVISAR
+        //1 solicitar tarea al master y calcular fuerzas
+        while (1){
+            MPI_Ssend(id, 1, MPI_INT, 0, i, MPI_COMM_WORLD);
+            MPI_Srecv(limite, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            If (limite[0]<>-1 && limite[1]<> -1) {
+                calcularFuerzas(cuerpos,N,delta_tiempo,limite); // cambiar parametros
+            } else {
+                break;
+            }
+        }
+        //2
+        for(i=0, i<P, i++)
+            if (i != idW) send forces[i](f);
+        for(i=0, i<P, i++){
+            if (i != idW) receive forces[i](tf);
+            sumar fuerzas de tf a f
+        }
+        actualizar p y v para mi bloque de cuerpos
+        //3 intercambiar cuerpos, velocidades y posiciones
+        for(i=0, i<P, i++)
+            if (i != idW) send bodies[i](idW,p,v);
+        for(i=0, i<P, i++){
+            if (i != idW) receive bodies[i](idW,tp,tv);
+            mover los cuerpos de tp y tv a p y v
+        }
+        //4 reinicializar f a cero
+        for(i = 0; i < bodies; i++)
+            f[i].x = f[i].y = 0.0;
+    }
+    
 	for(paso=0; paso<pasos;(paso+delta_tiempo)){
 		calcularFuerzas(cuerpos,N,delta_tiempo,id);
 		pthread_barrier_wait(&barrera);
@@ -313,43 +398,14 @@ int main(int argc, char * argv[]) {
 		printf("Ejecutar: %s <nro. de cuerpos> <DT> <pasos>\n",argv[0]);
 		return -1;
 	}
-	
-	N = atoi(argv[1]);
-	delta_tiempo = atof(argv[2]);
-	pasos = atoi(argv[3]);
-    T = atoi(argv[4]);
-	pthread_t hilo[T];
-	int hilo_id[T];
 
-	
+	MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
-	pthread_mutex_init(&mutex,NULL);
-    pthread_barrier_init(&barrera,NULL,T);
+    tTotal = funcion_mpi(rank);
 
-	cuerpos = (cuerpo_t*)malloc(sizeof(cuerpo_t)*N);
-	fuerza_totalX = (float*)malloc(sizeof(float)*N);
-	fuerza_totalY = (float*)malloc(sizeof(float)*N);
-	fuerza_totalZ = (float*)malloc(sizeof(float)*N);
-	matriz_fuerzaX = (float*)malloc(sizeof(float)*N*T);
-	matriz_fuerzaY = (float*)malloc(sizeof(float)*N*T);
-	matriz_fuerzaZ = (float*)malloc(sizeof(float)*N*T);
+	MPI_Finalize();
 
-	inicializarCuerpos(cuerpos,N);
-	
-	tIni = dwalltime(); 
-	
-	for(int id = 0; id<T; id++){
-        pthread_create(&hilo[id], NULL, &gravitacion, (void*)id);
-    }
-
-	//
-    for(int id = 0; id<T; id++){
-        pthread_join(hilo[id], NULL);
-    }
-
-	tFin =	dwalltime();
-	tTotal = tFin - tIni;
-	
 	printf("Tiempo en segundos: %f\n",tTotal);
 
 	finalizar();
