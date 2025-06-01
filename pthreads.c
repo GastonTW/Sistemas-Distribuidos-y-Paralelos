@@ -1,5 +1,5 @@
 // Compilar:
-//		gcc -o n_body_simple_NOGL n_body_simple.c -lm
+//		gcc -pthread -o salida archivo.c
 // Ejecutar:
 //		./n_body_simple_NOGL <nro de cuerpos> <DT> <Pasos> <hilos>
 #include <stdio.h>
@@ -35,7 +35,7 @@ double tIni, tFin, tTotal;
 #define POLVO 1
 #define H2 2 //Hidrogeno molecular
 
-// ===============
+// =============== 
 // ===== CPU =====
 // ===============
 
