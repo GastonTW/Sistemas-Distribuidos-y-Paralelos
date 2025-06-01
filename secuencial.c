@@ -219,7 +219,7 @@ void inicializarCuerpos(cuerpo_t *cuerpos,int N){
 	toroide_r = 1.0;
 	toroide_R = 2*toroide_r;
 	
-	srand(time(NULL));
+	srand(1);
 
 	for(cuerpo = 0; cuerpo < N; cuerpo++){
 
@@ -228,7 +228,7 @@ void inicializarCuerpos(cuerpo_t *cuerpos,int N){
 		fuerza_totalZ[cuerpo] = 0.0;
 
 		cuerpos[cuerpo].cuerpo = (rand() %3);
-
+		
 		if (cuerpos[cuerpo].cuerpo == ESTRELLA){
 			inicializarEstrella(&cuerpos[cuerpo],cuerpo,n);
 		}else if (cuerpos[cuerpo].cuerpo == POLVO){
@@ -286,6 +286,8 @@ int main(int argc, char * argv[]) {
 	int paso;
 	for(paso=0; paso<pasos; paso++){
 		gravitacionCPU(cuerpos,N,delta_tiempo);
+		if ((paso == 0) || (paso == 999))
+			printf("Pos cuerpo 1: X(%f) Y(%f) Z(%f)\n",cuerpos[0].px,cuerpos[0].py,cuerpos[0].pz);
 	}
 
 	tFin =	dwalltime();
