@@ -77,24 +77,61 @@ float *matriz_fuerzaX,*matriz_fuerzaY,*matriz_fuerzaZ;
 int rank;
 
 //
-// Funciones para Algoritmo de gravitacion
 //
-void funcionProcesoA(int N,int dt,int pasos, int T){
-	int i;
-	for(int i = 0; id<T; i++){
-        pthread_create(&hilo[i], NULL, gravitacion, (void*)i);
-    }
+void procesoA(int N,int dt,int pasos, int T,cuerpo_t *cuerpos,float *matriz_fuerzaX_l,float *matriz_fuerzaY_l,float *matriz_fuerzaZ_l,float *matriz_fuerzaX_v,float *matriz_fuerzaY_v,float *matriz_fuerzaZ_v){
+	int i,j,c,paso;
 
-	//
-    for(int i = 0; i<T; i++){
-        pthread_join(hilo[i], NULL);
-    }
+	for(i=0;i<N;i++){
+		for(j;j<T;j++){ //inicializo matriz fuerza total
+				matriz_fuerzaX_l[i*N + j]=0;
+				matriz_fuerzaZ_l[i*N + j]=0;
+				matriz_fuerzaY_l[i*N + j]=0;
+		}
+	}
+
+	crear_hilos();
+	for(paso=0; paso<pasos;paso++){
+		//semaforo wait
+		//semaforo lock
+		//send
+		//recive
+		//semaforo unlock
+	}
+	
+	
 }
 
-void funcionProcesoB(){}
+void procesoB(int N,int dt,int pasos, int T,cuerpo_t *cuerpos,float *matriz_fuerzaX_l,float *matriz_fuerzaY_l,float *matriz_fuerzaZ_l,float *matriz_fuerzaX_v,float *matriz_fuerzaY_v,float *matriz_fuerzaZ_v){
+	
+}
 
-int funcion_mpi(int rank){
+int funcion_mpi(int rank,int N,int delta_tiempo,int pasos,int T){
+	float *fuerza_totalX,*fuerza_totalY,*fuerza_totalZ;
+	float *matriz_fuerzaX_l,*matriz_fuerzaY_l,*matriz_fuerzaZ_l;
+	float *matriz_fuerzaX_v,*matriz_fuerzaY_v,*matriz_fuerzaZ_v;
+	cuerpo_t *cuerpos;
+
+	cuerpos = (cuerpo_t*)malloc(sizeof(cuerpo_t)*N);
+	fuerza_totalX = (float*)malloc(sizeof(float)*N);
+	fuerza_totalY = (float*)malloc(sizeof(float)*N);
+	fuerza_totalZ = (float*)malloc(sizeof(float)*N);
+	matriz_fuerzaX_l = (float*)malloc(sizeof(float)*N*T);
+	matriz_fuerzaY_l = (float*)malloc(sizeof(float)*N*T);
+	matriz_fuerzaZ_l = (float*)malloc(sizeof(float)*N*T);
+	matriz_fuerzaX_v = (float*)malloc(sizeof(float)*N*T);
+	matriz_fuerzaY_v = (float*)malloc(sizeof(float)*N*T);
+	matriz_fuerzaZ_v = (float*)malloc(sizeof(float)*N*T);
+
+	inicializarCuerpos(cuerpos,N);
+
+	if (rank==0){
+		procesoA(N,delta_tiempo,pasos,T,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v);
+	}else{
+		procesoB(N,delta_tiempo,pasos,T,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v);
+	}
    
+	finalizar(pasar todo lo declarado);
+
 	return tFin - tIni;
 }
 
@@ -167,9 +204,7 @@ void moverCuerpos(cuerpo_t *cuerpos, int N, int dt,int id){
 }
 
 void gravitacion(void *arg){
-	
-	
-	
+		
 }
 
 void inicializarEstrella(cuerpo_t *cuerpo,int i,double n){
@@ -311,6 +346,7 @@ void finalizar(void){
 }
 
 int main(int argc, char * argv[]) {
+	int N,delta_tiempo,pasos,T;
 
 	if (argc < 4){
 		printf("Ejecutar: %s <nro. de cuerpos> <DT> <pasos>\n",argv[0]);
@@ -320,7 +356,12 @@ int main(int argc, char * argv[]) {
 	MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
-    tTotal = funcion_mpi(rank);
+	N = atoi(argv[1]);
+	delta_tiempo = atof(argv[2]);
+	pasos = atoi(argv[3]);
+    T = atoi(argv[4]);
+
+    tTotal = funcion_mpi(rank,N,delta_tiempo,pasos,T);
 
 	MPI_Finalize();
 
