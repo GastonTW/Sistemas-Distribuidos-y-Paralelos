@@ -90,31 +90,25 @@ float F;
 			if ( (cuerpos[cuerpo1].px == cuerpos[cuerpo2].px) && (cuerpos[cuerpo1].py == cuerpos[cuerpo2].py) && (cuerpos[cuerpo1].pz == cuerpos[cuerpo2].pz))
                 continue;
 
-	            	dif_X = cuerpos[cuerpo2].px - cuerpos[cuerpo1].px; //X2-X1
+	        dif_X = cuerpos[cuerpo2].px - cuerpos[cuerpo1].px; //X2-X1
 			dif_Y = cuerpos[cuerpo2].py - cuerpos[cuerpo1].py; //Y2-Y1
 			dif_Z = cuerpos[cuerpo2].pz - cuerpos[cuerpo1].pz; //Z2-Z3
                 
 			r = sqrt(dif_X*dif_X + dif_Y*dif_Y + dif_Z*dif_Z);
 
-	                F = (G*cuerpos[cuerpo1].masa*cuerpos[cuerpo2].masa)/(r*r);
+	        F = (G*cuerpos[cuerpo1].masa*cuerpos[cuerpo2].masa)/(r*r);
 
-	                dif_X *= F; 
+	        dif_X *= F; 
 			dif_Y *= F;
 			dif_Z *= F;
-			/*fuerza_totalX[cuerpo1] += dif_X;
-	                fuerza_totalY[cuerpo1] += dif_Y;
-	                fuerza_totalZ[cuerpo1] += dif_Z;
 
-	                fuerza_totalX[cuerpo2] -= dif_X;
-	                fuerza_totalY[cuerpo2] -= dif_Y;
-	                fuerza_totalZ[cuerpo2] -= dif_Z;*/
 			matriz_fuerzaX[id*N+cuerpo1] += dif_X;
-	                matriz_fuerzaY[id*N+cuerpo1] += dif_Y;
-	                matriz_fuerzaZ[id*N+cuerpo1] += dif_Z;
+			matriz_fuerzaY[id*N+cuerpo1] += dif_Y;
+			matriz_fuerzaZ[id*N+cuerpo1] += dif_Z;
 
-	                matriz_fuerzaX[id*N+cuerpo2] -= dif_X;
-	                matriz_fuerzaY[id*N+cuerpo2] -= dif_Y;
-	                matriz_fuerzaZ[id*N+cuerpo2] -= dif_Z;
+			matriz_fuerzaX[id*N+cuerpo2] -= dif_X;
+			matriz_fuerzaY[id*N+cuerpo2] -= dif_Y;
+			matriz_fuerzaZ[id*N+cuerpo2] -= dif_Z;
 	                
 		}
 	}
@@ -126,8 +120,8 @@ void moverCuerpos(cuerpo_t *cuerpos, int N, int dt,int id){
 	for(cuerpo = id; cuerpo<N ; cuerpo+=T){
 
 		for (i=0;i<T;i++){
-			fuerza_totalX[i] += matriz_fuerzaX[i*N+cuerpo];
-			fuerza_totalY[i] += matriz_fuerzaY[i*N+cuerpo];
+			fuerza_totalX[cuerpo] += matriz_fuerzaX[i*N+cuerpo];
+			fuerza_totalY[cuerpo] += matriz_fuerzaY[i*N+cuerpo];
 			//fuerza_totalZ[i] += matriz_fuerzaZ[i*N+cuerpo];
 			matriz_fuerzaX[i*N+cuerpo] = 0.0;
 			matriz_fuerzaY[i*N+cuerpo] = 0.0;

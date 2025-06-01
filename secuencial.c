@@ -85,25 +85,25 @@ float F;
 			if ( (cuerpos[cuerpo1].px == cuerpos[cuerpo2].px) && (cuerpos[cuerpo1].py == cuerpos[cuerpo2].py) && (cuerpos[cuerpo1].pz == cuerpos[cuerpo2].pz))
                 continue;
 
-	            	dif_X = cuerpos[cuerpo2].px - cuerpos[cuerpo1].px;
+	        dif_X = cuerpos[cuerpo2].px - cuerpos[cuerpo1].px;
 			dif_Y = cuerpos[cuerpo2].py - cuerpos[cuerpo1].py;
 			dif_Z = cuerpos[cuerpo2].pz - cuerpos[cuerpo1].pz;
                 
 			distancia = sqrt(dif_X*dif_X + dif_Y*dif_Y + dif_Z*dif_Z);
 
-	                F = (G*cuerpos[cuerpo1].masa*cuerpos[cuerpo2].masa)/(distancia*distancia);
+	        F = (G*cuerpos[cuerpo1].masa*cuerpos[cuerpo2].masa)/(distancia*distancia);
 
-	                dif_X *= F;
+	        dif_X *= F;
 			dif_Y *= F;
 			dif_Z *= F;
 
-	                fuerza_totalX[cuerpo1] += dif_X;
-	                fuerza_totalY[cuerpo1] += dif_Y;
-	                fuerza_totalZ[cuerpo1] += dif_Z;
+			fuerza_totalX[cuerpo1] += dif_X;
+			fuerza_totalY[cuerpo1] += dif_Y;
+			fuerza_totalZ[cuerpo1] += dif_Z;
 
-	                fuerza_totalX[cuerpo2] -= dif_X;
-	                fuerza_totalY[cuerpo2] -= dif_Y;
-	                fuerza_totalZ[cuerpo2] -= dif_Z;
+			fuerza_totalX[cuerpo2] -= dif_X;
+			fuerza_totalY[cuerpo2] -= dif_Y;
+			fuerza_totalZ[cuerpo2] -= dif_Z;
 		}
 	}
 }
