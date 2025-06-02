@@ -134,6 +134,7 @@ int funcion_mpi(int rank,int N,int delta_tiempo,int pasos,int T){
 	pthread_mutex_t mutex1, mutex2;
 	pthread_barrier_t barrera;
 	int i,j;
+	double tIni, tFin;
 
 	cuerpos = (cuerpo_t*)malloc(sizeof(cuerpo_t)*N);
 	fuerza_totalX = (float*)malloc(sizeof(float)*N);
@@ -165,14 +166,17 @@ int funcion_mpi(int rank,int N,int delta_tiempo,int pasos,int T){
 	pthread_mutex_init(&mutex2, NULL);
 	pthread_barrier_init(&barrera,NULL,T);
 
+	tIni = dwalltime(); 
+
 	if (rank==0){
 		procesoA(N,delta_tiempo,pasos,T,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,mutex1,mutex2,barrera);
 	}else{
 		procesoB(N,delta_tiempo,pasos,T,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,mutex1,mutex2,barrera);
 	}
-   
-	finalizar(cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,mutex1,mutex2,barrera);
+   	tFin =	dwalltime();
 
+	finalizar(cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,mutex1,mutex2,barrera);
+	
 	return tFin - tIni;
 }
 
@@ -329,6 +333,7 @@ int main(int argc, char * argv[]) {
 	float toroide_R;
 	cuerpo_t *cuerpos;
 	int rank;
+	double tTotal;
 
 	if (argc < 4){
 		printf("Ejecutar: %s <nro. de cuerpos> <DT> <pasos>\n",argv[0]);

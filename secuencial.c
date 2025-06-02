@@ -286,8 +286,10 @@ int main(int argc, char * argv[]) {
 	int paso;
 	for(paso=0; paso<pasos; paso++){
 		gravitacionCPU(cuerpos,N,delta_tiempo);
-		if ((paso == 0) || (paso == 999))
+		if ((paso == 0) || (paso == 999)){
 			printf("Pos cuerpo 1: X(%f) Y(%f) Z(%f)\n",cuerpos[0].px,cuerpos[0].py,cuerpos[0].pz);
+			printf("Pos cuerpo 2: X(%f) Y(%f) Z(%f)\n",cuerpos[1].px,cuerpos[1].py,cuerpos[1].pz);
+		}
 	}
 
 	tFin =	dwalltime();

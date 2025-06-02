@@ -71,6 +71,7 @@ int pasos;
 int N;
 //nnuevo
 int T;
+pthread_mutex_t mutex;
 pthread_barrier_t barrera;
 float *matriz_fuerzaX,*matriz_fuerzaY,*matriz_fuerzaZ;
 
@@ -78,7 +79,7 @@ float *matriz_fuerzaX,*matriz_fuerzaY,*matriz_fuerzaZ;
 // Funciones para Algoritmo de gravitacion
 //
 
-void calcularFuerzas(int id){
+void calcularFuerzas(cuerpo_t *cuerpos, int N, int dt,int id){
 int cuerpo1, cuerpo2;
 float dif_X, dif_Y, dif_Z;
 float r;
@@ -113,7 +114,7 @@ float F;
 	}
 }
 
-void moverCuerpos(int id){
+void moverCuerpos(cuerpo_t *cuerpos, int N, int dt,int id){
  	int cuerpo,i,j;
 	
 	for(cuerpo = id; cuerpo<N ; cuerpo+=T){
@@ -150,9 +151,9 @@ void * gravitacion(void *arg){
 	int id=(int*)arg;
 	int paso;
 	for(paso=0; paso<pasos;paso++){
-		calcularFuerzas(id);
+		calcularFuerzas(cuerpos,N,delta_tiempo,id);
 		pthread_barrier_wait(&barrera);
-		moverCuerpos(id);
+		moverCuerpos(cuerpos,N,delta_tiempo,id);
 		pthread_barrier_wait(&barrera);
 		if (((paso == 0) || (paso == 999)) && id == 0)
 			printf("Pos cuerpo 1: X(%f) Y(%f) Z(%f)\n",cuerpos[0].px,cuerpos[0].py,cuerpos[0].pz);
@@ -295,6 +296,7 @@ void finalizar(void){
 	free(matriz_fuerzaY);
 	free(matriz_fuerzaZ);
 	pthread_barrier_destroy(&barrera);
+	pthread_mutex_destroy(&mutex);
 }
 
 int main(int argc, char * argv[]) {
@@ -311,6 +313,9 @@ int main(int argc, char * argv[]) {
 	pthread_t hilo[T];
 	int hilo_id[T];
 
+	
+
+	pthread_mutex_init(&mutex,NULL);
     pthread_barrier_init(&barrera,NULL,T);
 
 	cuerpos = (cuerpo_t*)malloc(sizeof(cuerpo_t)*N);

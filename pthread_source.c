@@ -29,6 +29,11 @@ void gravitacion(int id){
             pthreads_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
             pthreads_mutex_lock(&mutex2);//semaforo (espera a mpi)
         }
+
+        if (((paso == 0) || (paso == 999)) && (id == 0)){
+			printf("Pos cuerpo 1: X(%f) Y(%f) Z(%f)\n",cuerpos[0].px,cuerpos[0].py,cuerpos[0].pz);
+			printf("Pos cuerpo 2: X(%f) Y(%f) Z(%f)\n",cuerpos[1].px,cuerpos[1].py,cuerpos[1].pz);
+        }
     }
 }
 
