@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
+#include "pthread_source.h"
 
 //
 // Para tiempo de ejecucion
@@ -83,9 +84,12 @@ void procesoA(int N,int dt,int pasos, int T,cuerpo_t *cuerpos,float *matriz_fuer
 
 	for(i=0;i<N;i++){
 		for(j;j<T;j++){ //inicializo matriz fuerza total
-				matriz_fuerzaX_l[i*N + j]=0;
-				matriz_fuerzaZ_l[i*N + j]=0;
-				matriz_fuerzaY_l[i*N + j]=0;
+				matriz_fuerzaX_l[i*N + j]=0.0;
+				matriz_fuerzaZ_l[i*N + j]=0.0;
+				matriz_fuerzaY_l[i*N + j]=0.0;
+				matriz_fuerzaX_v[i*N + j]=0.0;
+				matriz_fuerzaY_v[i*N + j]=0.0;
+				matriz_fuerzaZ_v[i*N + j]=0.0;
 		}
 	}
 

@@ -11,7 +11,7 @@ void gravitacion(int id){
     //barrera
     //semaforo (aviso a mpi que termine)
     //semaforo (espera a mpi)
-     for(i=0;i<){ //MOVER LOS CUERPOS Q LE TOCARON A LOS HILOS
+    for(i=0;i<){ //MOVER LOS CUERPOS Q LE TOCARON A LOS HILOS
         moverCuerpos();
     }
     //barrera
@@ -19,7 +19,7 @@ void gravitacion(int id){
     //semaforo (espera a mpi)
 }
 
-void crear_hilos(N,T,delta,pasos,fuerzasTODAS,proceso,){
+void crear_hilos(int N,int T,int delta_tiempo,int pasos,int proceso,cuerpo_t *cuerpos,float *matriz_fuerzaX_l,float *matriz_fuerzaY_l,float *matriz_fuerzaZ_l,float *matriz_fuerzaX_v,float *matriz_fuerzaY_v,float *matriz_fuerzaZ_v){
     //INICIALIZAR VARIABLES RECIBIDAS POR PARAMETRO A GLOBALES
     int i;
     for(int i = 0; id<T; i++){
@@ -30,5 +30,4 @@ void crear_hilos(N,T,delta,pasos,fuerzasTODAS,proceso,){
     for(int i = 0; i<T; i++){
         pthread_join(hilo[i], NULL);
     }
-
 }
