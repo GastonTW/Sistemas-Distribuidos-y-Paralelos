@@ -316,7 +316,7 @@ int main(int argc, char * argv[]) {
 	N = atoi(argv[1]);
 	delta_tiempo = atof(argv[2]);
 	pasos = atoi(argv[3]);
-    	T = atoi(argv[4]);
+    T = atoi(argv[4]);
 	pthread_t hilo[T];
 	int hilo_id[T];
 
