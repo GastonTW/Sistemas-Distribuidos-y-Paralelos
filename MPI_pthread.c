@@ -147,7 +147,7 @@ int funcion_mpi(int rank,int N,int delta_tiempo,int pasos,int T){
 	matriz_fuerzaY_v = (float*)malloc(sizeof(float)*N*T);
 	matriz_fuerzaZ_v = (float*)malloc(sizeof(float)*N*T);
 	
-	inicializarCuerpos(cuerpos,N);
+	inicializarCuerpos(cuerpos,N); // pasar float toroide_alfa;float toroide_theta;float toroide_incremento;float toroide_lado;float toroide_r;float toroide_R;
 
 	MPI_Datatype MPI_CUERPO;
 	crear_tipo_cuerpo(&MPI_CUERPO);
