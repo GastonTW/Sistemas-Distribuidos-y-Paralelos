@@ -10,7 +10,8 @@ int N, T, delta_tiempo, pasos, proceso;
 pthread_mutex_t mutex1, mutex2;
 pthread_barrier_t barrera;
 
-void gravitacion(int id){
+void* gravitacion(int *arg){
+    int id=(int*)arg; //cambie esto
     int paso;
     for(paso=0; paso<pasos;paso++){
         //CALCULAR LAS FUERZAS Q LE TOCARON A LOS HILOS
@@ -18,16 +19,16 @@ void gravitacion(int id){
 
         pthreads_barrier_wait(&barrera);
         if ((id == 0) || (id == 1)){
-            pthreads_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
-            pthreads_mutex_lock(&mutex2);//semaforo (espera a mpi)
+            pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
+            pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
         }
 
         moverCuerpos(id);
 
         pthreads_barrier_wait(&barrera); //barrera
         if ((id == 0) || (id == 1)) {
-            pthreads_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
-            pthreads_mutex_lock(&mutex2);//semaforo (espera a mpi)
+            pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
+            pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
         }
 
         if (((paso == 0) || (paso == 999)) && (id == 0)){
@@ -57,8 +58,8 @@ void crear_hilos(int N_p,int T_p,int delta_tiempo_p,int pasos_p,int proceso_p,cu
     barrera=barrera_p;
 
     pthread_t hilo[T];
-    for(int i = 0; id<T; i++){
-        pthread_create(&hilo[i], NULL, gravitacion, ((void*)i*2)+proceso);
+    for(int i = 0; i<T; i++){
+        pthread_create(&hilo[i], NULL, gravitacion, ((void*)(i*2)+proceso)); //le cambie los parentesis a esto
     }
 
 	//
