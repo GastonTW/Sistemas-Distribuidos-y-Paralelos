@@ -28,6 +28,7 @@ extern float *matriz_fuerzaX_l, *matriz_fuerzaY_l, *matriz_fuerzaZ_l;
 extern float *matriz_fuerzaX_v, *matriz_fuerzaY_v, *matriz_fuerzaZ_v;
 extern cuerpo_t *cuerpos;
 extern int N, T, delta_tiempo, pasos, proceso;
+extern pthread_mutex_t mutex1, mutex2;
 extern pthread_barrier_t barrera;
 
 // Declaraciones de funciones
@@ -36,8 +37,9 @@ void crear_hilos(int N_p, int T_p, int delta_tiempo_p, int pasos_p, int proceso_
                  cuerpo_t *cuerpos_p,
                  float *matriz_fuerzaX_l_p, float *matriz_fuerzaY_l_p, float *matriz_fuerzaZ_l_p,
                  float *matriz_fuerzaX_v_p, float *matriz_fuerzaY_v_p, float *matriz_fuerzaZ_v_p,
-                 pthread_barrier_t barrera_p);
+                 pthread_barrier_t barrera_p,pthread_t* hilo_p);
 void calcularFuerzas(int id);
 void moverCuerpos(int id);
+void cerrar_hilos();
 
 #endif // PTHREAD_SOURCE_H
