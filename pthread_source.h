@@ -7,11 +7,20 @@
 #define G 6.673e-11
 #endif
 
-typedef struct {
-    float px, py, pz;
-    float vx, vy, vz;
-    float masa;
-} cuerpo_t;
+typedef struct cuerpo cuerpo_t;
+struct cuerpo{
+	float masa;
+	float px;
+	float py;
+	float pz;
+	float vx;
+	float vy;
+	float vz;
+	float r;
+	float g;
+	float b;
+	int cuerpo;
+};
 
 // Variables globales
 extern float *fuerza_totalX, *fuerza_totalY, *fuerza_totalZ;
@@ -23,7 +32,7 @@ extern pthread_mutex_t mutex1, mutex2;
 extern pthread_barrier_t barrera;
 
 // Declaraciones de funciones
-void gravitacion(int *arg);
+void* gravitacion(void *arg);
 void crear_hilos(int N_p, int T_p, int delta_tiempo_p, int pasos_p, int proceso_p,
                  cuerpo_t *cuerpos_p,
                  float *matriz_fuerzaX_l_p, float *matriz_fuerzaY_l_p, float *matriz_fuerzaZ_l_p,

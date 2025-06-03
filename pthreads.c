@@ -131,12 +131,12 @@ void moverCuerpos(int id){
         fuerza_totalY[cuerpo] *= 1/cuerpos[cuerpo].masa;
         //fuerza_totalZ[cuerpo] *= 1/cuerpos[cuerpo].masa;
 
-        cuerpos[cuerpo].vx += fuerza_totalX[cuerpo]*dt;
-        cuerpos[cuerpo].vy += fuerza_totalY[cuerpo]*dt;
+        cuerpos[cuerpo].vx += fuerza_totalX[cuerpo]*delta_tiempo;
+        cuerpos[cuerpo].vy += fuerza_totalY[cuerpo]*delta_tiempo;
         //cuerpos[cuerpo].vz += fuerza_totalZ[cuerpo]*dt;
 
-        cuerpos[cuerpo].px += cuerpos[cuerpo].vx *dt;
-        cuerpos[cuerpo].py += cuerpos[cuerpo].vy *dt;
+        cuerpos[cuerpo].px += cuerpos[cuerpo].vx *delta_tiempo;
+        cuerpos[cuerpo].py += cuerpos[cuerpo].vy *delta_tiempo;
         //cuerpos[cuerpo].pz += cuerpos[cuerpo].vz *dt;
 
 		fuerza_totalX[cuerpo] = 0.0;

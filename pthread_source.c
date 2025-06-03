@@ -1,5 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
 #include "pthread_source.h"
 
 float *fuerza_totalX, *fuerza_totalY, *fuerza_totalZ;
@@ -10,14 +12,15 @@ int N, T, delta_tiempo, pasos, proceso;
 pthread_mutex_t mutex1, mutex2;
 pthread_barrier_t barrera;
 
-void* gravitacion(int *arg){
-    int id=(int*)arg; //cambie esto
+void * gravitacion(void *arg){
+    //int id=(int*)arg; //cambie esto
+    int id = (intptr_t)arg;
     int paso;
     for(paso=0; paso<pasos;paso++){
         //CALCULAR LAS FUERZAS Q LE TOCARON A LOS HILOS
         calcularFuerzas(id);
 
-        pthreads_barrier_wait(&barrera);
+        pthread_barrier_wait(&barrera);
         if ((id == 0) || (id == 1)){
             pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
             pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
@@ -25,7 +28,7 @@ void* gravitacion(int *arg){
 
         moverCuerpos(id);
 
-        pthreads_barrier_wait(&barrera); //barrera
+        pthread_barrier_wait(&barrera); //barrera
         if ((id == 0) || (id == 1)) {
             pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
             pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
@@ -59,7 +62,8 @@ void crear_hilos(int N_p,int T_p,int delta_tiempo_p,int pasos_p,int proceso_p,cu
 
     pthread_t hilo[T];
     for(int i = 0; i<T; i++){
-        pthread_create(&hilo[i], NULL, gravitacion, ((void*)(i*2)+proceso)); //le cambie los parentesis a esto
+        //pthread_create(&hilo[i], NULL, gravitacion, (void*)(i*2 + proceso)); //le cambie los parentesis a esto
+        pthread_create(&hilo[i], NULL, gravitacion, (void*)(intptr_t)(i*2 + proceso));
     }
 
 	//
@@ -92,13 +96,13 @@ int t2=T*2;
 			        dif_Y *= F;
 			        dif_Z *= F;
 			
-					matriz_fuerzaX[id*N+cuerpo1] += dif_X;
-	                matriz_fuerzaY[id*N+cuerpo1] += dif_Y;
-	                matriz_fuerzaZ[id*N+cuerpo1] += dif_Z;
+			matriz_fuerzaX_l[id*N+cuerpo1] += dif_X;
+	                matriz_fuerzaY_l[id*N+cuerpo1] += dif_Y;
+	                matriz_fuerzaZ_l[id*N+cuerpo1] += dif_Z;
 
-	                matriz_fuerzaX[id*N+cuerpo2] -= dif_X;
-	                matriz_fuerzaY[id*N+cuerpo2] -= dif_Y;
-	                matriz_fuerzaZ[id*N+cuerpo2] -= dif_Z;
+	                matriz_fuerzaX_l[id*N+cuerpo2] -= dif_X;
+	                matriz_fuerzaY_l[id*N+cuerpo2] -= dif_Y;
+	                matriz_fuerzaZ_l[id*N+cuerpo2] -= dif_Z;
 	                
 		}
 	}
@@ -124,12 +128,12 @@ void moverCuerpos(int id){
         fuerza_totalY[cuerpo] *= 1/cuerpos[cuerpo].masa;
         //fuerza_totalZ[cuerpo] *= 1/cuerpos[cuerpo].masa;
 
-        cuerpos[cuerpo].vx += fuerza_totalX[cuerpo]*dt;
-        cuerpos[cuerpo].vy += fuerza_totalY[cuerpo]*dt;
+        cuerpos[cuerpo].vx += fuerza_totalX[cuerpo]*delta_tiempo;
+        cuerpos[cuerpo].vy += fuerza_totalY[cuerpo]*delta_tiempo;
         //cuerpos[cuerpo].vz += fuerza_totalZ[cuerpo]*dt;
 
-        cuerpos[cuerpo].px += cuerpos[cuerpo].vx *dt;
-        cuerpos[cuerpo].py += cuerpos[cuerpo].vy *dt;
+        cuerpos[cuerpo].px += cuerpos[cuerpo].vx *delta_tiempo;
+        cuerpos[cuerpo].py += cuerpos[cuerpo].vy *delta_tiempo;
         //cuerpos[cuerpo].pz += cuerpos[cuerpo].vz *dt;
 
 		fuerza_totalX[cuerpo] = 0.0;
