@@ -93,23 +93,54 @@ void crear_tipo_cuerpo(MPI_Datatype *tipo) {
 //
 void procesoA(int N,int dt,int pasos, int T,cuerpo_t *cuerpos,float *matriz_fuerzaX_l,float *matriz_fuerzaY_l,
 			  float *matriz_fuerzaZ_l,float *matriz_fuerzaX_v,float *matriz_fuerzaY_v,float *matriz_fuerzaZ_v, 
-			  MPI_Datatype MPI_CUERPO,pthread_barrier_t barrera){
+			  MPI_Datatype MPI_CUERPO,pthread_mutex_t mutex1,pthread_mutex_t mutex2,pthread_barrier_t barrera){
 	int i,j,c,paso;
 	int nt=N*T;
 
+	pthread_mutex_lock(&mutex1);
+	pthread_mutex_lock(&mutex2);
 	crear_hilos(N,dt,pasos,T,0,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,
-		matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,barrera);
-	
+		matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,mutex1,mutex2,barrera);
+	for(paso=0; paso<pasos;paso++){
+		pthread_mutex_lock(&mutex1);
+		MPI_Ssend(matriz_fuerzaX_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
+		MPI_Ssend(matriz_fuerzaY_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
+		MPI_Ssend(matriz_fuerzaZ_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
+        	MPI_Recv(matriz_fuerzaX_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(matriz_fuerzaY_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(matriz_fuerzaZ_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		pthread_mutex_unlock(&mutex2);
+		pthread_mutex_lock(&mutex1); // espero a mover cuerpos
+		MPI_Ssend(cuerpos, N, MPI_CUERPO, 1, paso, MPI_COMM_WORLD);
+		MPI_Recv(cuerpos, N, MPI_CUERPO, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		pthread_mutex_unlock(&mutex2); //semaforo unlock
+	}
 }
 
 void procesoB(int N,int dt,int pasos, int T,cuerpo_t *cuerpos,float *matriz_fuerzaX_l,float *matriz_fuerzaY_l,
 			  float *matriz_fuerzaZ_l,float *matriz_fuerzaX_v,float *matriz_fuerzaY_v,float *matriz_fuerzaZ_v, 
-			  MPI_Datatype MPI_CUERPO,pthread_barrier_t barrera){
+			  MPI_Datatype MPI_CUERPO,pthread_mutex_t mutex1,pthread_mutex_t mutex2,pthread_barrier_t barrera){
 	int i,j,c,paso;
+	int nt=N*T;
 
+	pthread_mutex_lock(&mutex1);
+	pthread_mutex_lock(&mutex2);
 	crear_hilos(N,dt,pasos,T,1,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,
-		matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,barrera);
-	
+		matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,mutex1,mutex2,barrera);
+	for(paso=0; paso<pasos;paso++){
+		pthread_mutex_lock(&mutex1);
+		MPI_Recv(matriz_fuerzaX_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(matriz_fuerzaY_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(matriz_fuerzaZ_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Ssend(matriz_fuerzaX_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
+		MPI_Ssend(matriz_fuerzaY_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
+		MPI_Ssend(matriz_fuerzaZ_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
+		pthread_mutex_unlock(&mutex2);
+		pthread_mutex_lock(&mutex1); // espero a mover cuerpos
+		MPI_Recv(cuerpos, N, MPI_CUERPO, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Ssend(cuerpos, N, MPI_CUERPO, 0, paso, MPI_COMM_WORLD);
+		pthread_mutex_unlock(&mutex2); //semaforo unlock
+	}
 }
 
 int funcion_mpi(int rank,int N,int delta_tiempo,int pasos,int T,float *toroide_alfa,float *toroide_theta,
@@ -119,6 +150,7 @@ int funcion_mpi(int rank,int N,int delta_tiempo,int pasos,int T,float *toroide_a
 	float *matriz_fuerzaX_l,*matriz_fuerzaY_l,*matriz_fuerzaZ_l;
 	float *matriz_fuerzaX_v,*matriz_fuerzaY_v,*matriz_fuerzaZ_v;
 	cuerpo_t *cuerpos;
+	pthread_mutex_t mutex1, mutex2;
 	pthread_barrier_t barrera;
 	int i,j;
 	double tIni, tFin;
@@ -153,21 +185,23 @@ int funcion_mpi(int rank,int N,int delta_tiempo,int pasos,int T,float *toroide_a
 				matriz_fuerzaZ_v[i*N + j]=0.0;
 		}
 	}
+	pthread_mutex_init(&mutex1, NULL);
+	pthread_mutex_init(&mutex2, NULL);
 	pthread_barrier_init(&barrera,NULL,T);
 
 	tIni = dwalltime(); 
 
 	if (rank==0){
 		procesoA(N,delta_tiempo,pasos,T,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,
-			matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,barrera);
+			matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,mutex1,mutex2,barrera);
 	}else if (rank==1){
 		procesoB(N,delta_tiempo,pasos,T,cuerpos,matriz_fuerzaX_l,matriz_fuerzaY_l,matriz_fuerzaZ_l,
-			matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,barrera);
+			matriz_fuerzaX_v,matriz_fuerzaY_v,matriz_fuerzaZ_v,MPI_CUERPO,mutex1,mutex2,barrera);
 	}
    	tFin =	dwalltime();
 
 	finalizar(cuerpos,fuerza_totalX, fuerza_totalY, fuerza_totalZ,matriz_fuerzaX_l, matriz_fuerzaY_l, 
-		matriz_fuerzaZ_l,matriz_fuerzaX_v, matriz_fuerzaY_v, matriz_fuerzaZ_v,MPI_CUERPO, barrera);
+		matriz_fuerzaZ_l,matriz_fuerzaX_v, matriz_fuerzaY_v, matriz_fuerzaZ_v,MPI_CUERPO,mutex1, mutex2, barrera);
 	return tFin - tIni;
 }
 
@@ -345,7 +379,7 @@ void finalizar(cuerpo_t *cuerpos,
                float *matriz_fuerzaX_l, float *matriz_fuerzaY_l, float *matriz_fuerzaZ_l,
                float *matriz_fuerzaX_v, float *matriz_fuerzaY_v, float *matriz_fuerzaZ_v,
                MPI_Datatype MPI_CUERPO,
-               pthread_barrier_t barrera){
+               pthread_mutex_t mutex1, pthread_mutex_t mutex2, pthread_barrier_t barrera){
 	free(cuerpos);
 	free(fuerza_totalX);
 	free(fuerza_totalY);
@@ -356,6 +390,8 @@ void finalizar(cuerpo_t *cuerpos,
 	free(matriz_fuerzaX_v);
 	free(matriz_fuerzaY_v);
 	free(matriz_fuerzaZ_v);
+	pthread_mutex_destroy(&mutex1);
+	pthread_mutex_destroy(&mutex2);
 	pthread_barrier_destroy(&barrera);
 	MPI_Type_free(&MPI_CUERPO);
 }

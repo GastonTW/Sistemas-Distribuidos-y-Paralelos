@@ -9,31 +9,50 @@ float *matriz_fuerzaX_l, *matriz_fuerzaY_l, *matriz_fuerzaZ_l;
 float *matriz_fuerzaX_v, *matriz_fuerzaY_v, *matriz_fuerzaZ_v;
 cuerpo_t *cuerpos;
 int N, T, delta_tiempo, pasos, proceso;
-pthread_mutex_t mutex1, mutex2;
 pthread_barrier_t barrera;
 
 void * gravitacion(void *arg){
     //int id=(int*)arg; //cambie esto
-    int id = (intptr_t)arg;
-    int paso;
+    int id = (int*)arg;
+    int paso, nt=N*T;
     for(paso=0; paso<pasos;paso++){
         //CALCULAR LAS FUERZAS Q LE TOCARON A LOS HILOS
         calcularFuerzas(id);
 
         pthread_barrier_wait(&barrera);
-        if ((id == 0) || (id == 1)){
-            pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
-            pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
-        }
 
+        if (id == 0){
+            //pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
+            //pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
+            MPI_Ssend(matriz_fuerzaX_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
+		    MPI_Ssend(matriz_fuerzaY_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
+		    MPI_Ssend(matriz_fuerzaZ_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
+        	MPI_Recv(matriz_fuerzaX_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		    MPI_Recv(matriz_fuerzaY_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		    MPI_Recv(matriz_fuerzaZ_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }else if(id == 1){
+            MPI_Recv(matriz_fuerzaX_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(matriz_fuerzaY_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(matriz_fuerzaZ_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Ssend(matriz_fuerzaX_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
+            MPI_Ssend(matriz_fuerzaY_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
+            MPI_Ssend(matriz_fuerzaZ_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
+
+        }
+        pthread_barrier_wait(&barrera);
         moverCuerpos(id);
 
         pthread_barrier_wait(&barrera); //barrera
-        if ((id == 0) || (id == 1)) {
-            pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
-            pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
+        if (id == 0){
+            //pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
+            //pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
+            MPI_Ssend(cuerpos, N, MPI_CUERPO, 1, paso, MPI_COMM_WORLD);
+		    MPI_Recv(cuerpos, N, MPI_CUERPO, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }else if(id == 1){
+            MPI_Recv(cuerpos, N, MPI_CUERPO, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		    MPI_Ssend(cuerpos, N, MPI_CUERPO, 0, paso, MPI_COMM_WORLD);
         }
-
+        pthread_barrier_wait(&barrera);
         if (((paso == 0) || (paso == 999)) && (id == 0)){
 			printf("Pos cuerpo 1: X(%f) Y(%f) Z(%f)\n",cuerpos[0].px,cuerpos[0].py,cuerpos[0].pz);
 			printf("Pos cuerpo 2: X(%f) Y(%f) Z(%f)\n",cuerpos[1].px,cuerpos[1].py,cuerpos[1].pz);
@@ -41,7 +60,9 @@ void * gravitacion(void *arg){
     }
 }
 
-void crear_hilos(int N_p,int T_p,int delta_tiempo_p,int pasos_p,int proceso_p,cuerpo_t *cuerpos_p,float *matriz_fuerzaX_l_p,float *matriz_fuerzaY_l_p,float *matriz_fuerzaZ_l_p,float *matriz_fuerzaX_v_p,float *matriz_fuerzaY_v_p,float *matriz_fuerzaZ_v_p,pthread_mutex_t mutex1_p,pthread_mutex_t mutex2_p,pthread_barrier_t barrera_p){
+void crear_hilos(int N_p,int T_p,int delta_tiempo_p,int pasos_p,int proceso_p,cuerpo_t *cuerpos_p,float *matriz_fuerzaX_l_p,
+    float *matriz_fuerzaY_l_p,float *matriz_fuerzaZ_l_p,float *matriz_fuerzaX_v_p,float *matriz_fuerzaY_v_p,
+    float *matriz_fuerzaZ_v_p,pthread_barrier_t barrera_p){
     //INICIALIZAR VARIABLES RECIBIDAS POR PARAMETRO A GLOBALES
     int i;
     N=N_p;
@@ -56,14 +77,11 @@ void crear_hilos(int N_p,int T_p,int delta_tiempo_p,int pasos_p,int proceso_p,cu
     matriz_fuerzaX_v = matriz_fuerzaX_v_p;
     matriz_fuerzaY_v = matriz_fuerzaY_v_p;
     matriz_fuerzaZ_v = matriz_fuerzaZ_v_p;
-    mutex1=mutex1_p;
-    mutex2=mutex2_p;
     barrera=barrera_p;
 
     pthread_t hilo[T];
     for(int i = 0; i<T; i++){
-        //pthread_create(&hilo[i], NULL, gravitacion, (void*)(i*2 + proceso)); //le cambie los parentesis a esto
-        pthread_create(&hilo[i], NULL, gravitacion, (void*)(intptr_t)(i*2 + proceso));
+        pthread_create(&hilo[i], NULL, gravitacion, (void*)(i*2 + proceso));
     }
 
 	//
@@ -96,7 +114,7 @@ int t2=T*2;
 			        dif_Y *= F;
 			        dif_Z *= F;
 			
-			matriz_fuerzaX_l[id*N+cuerpo1] += dif_X;
+			        matriz_fuerzaX_l[id*N+cuerpo1] += dif_X;
 	                matriz_fuerzaY_l[id*N+cuerpo1] += dif_Y;
 	                matriz_fuerzaZ_l[id*N+cuerpo1] += dif_Z;
 
@@ -114,8 +132,8 @@ void moverCuerpos(int id){
 	for(cuerpo = id; cuerpo<N ; cuerpo+=t2){
 
 		for (i=0;i<T;i++){
-			fuerza_totalX[i] += matriz_fuerzaX_l[i*N+cuerpo]+matriz_fuerzaX_v[i*N+cuerpo];
-			fuerza_totalY[i] += matriz_fuerzaY_l[i*N+cuerpo]+matriz_fuerzaY_v[i*N+cuerpo];
+			fuerza_totalX[cuerpo] += matriz_fuerzaX_l[i*N+cuerpo]+matriz_fuerzaX_v[i*N+cuerpo];
+			fuerza_totalY[cuerpo] += matriz_fuerzaY_l[i*N+cuerpo]+matriz_fuerzaY_v[i*N+cuerpo];
 			//fuerza_totalZ[i] += matriz_fuerzaZ[i*N+cuerpo];
 			matriz_fuerzaX_l[i*N+cuerpo] = 0.0;
 			matriz_fuerzaY_l[i*N+cuerpo] = 0.0;
