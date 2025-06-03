@@ -20,20 +20,18 @@ void * gravitacion(void *arg){
    
     for(paso=0; paso<pasos;paso++){
         //CALCULAR LAS FUERZAS Q LE TOCARON A LOS HILOS
+	
+	//if(id==0) printf("paso: %d \n",paso);
         calcularFuerzas(id);
         pthread_barrier_wait(&barrera);
         if ((id == 0) || (id == 1)){	
-	    printf("desbloqueando MUTEX1 %d \n",proceso);
-            pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
-	    printf("esperando mutex2 %d \n",proceso);
+            pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine
             pthread_mutex_lock(&mutex2);//semaforo (espera a mpi)
 
         }
 	pthread_barrier_wait(&barrera);
 
-	if(id==0) printf("moviendo cuerpos \n");
         moverCuerpos(id);
-	if(id==0) printf("fin moviendo cuerpos \n");
         pthread_barrier_wait(&barrera); //barrera
         if ((id == 0) || (id == 1)) {
             pthread_mutex_unlock(&mutex1);//semaforo (aviso a mpi que termine)
@@ -41,16 +39,14 @@ void * gravitacion(void *arg){
         }
 	pthread_barrier_wait(&barrera);
 
-        if (((paso == 0) || (paso == 999)) && (id == 0)){
+        if (((paso == 0) || (paso == 999)) && id == 0){
 			printf("Pos cuerpo 1: X(%f) Y(%f) Z(%f)\n",cuerpos[0].px,cuerpos[0].py,cuerpos[0].pz);
 			printf("Pos cuerpo 2: X(%f) Y(%f) Z(%f)\n",cuerpos[1].px,cuerpos[1].py,cuerpos[1].pz);
         }
     }
 }
 
-void crear_hilos(int N_p,int delta_tiempo_p,int pasos_p,int T_p,int proceso_p,cuerpo_t *cuerpos_p,float *matriz_fuerzaX_l_p,float *matriz_fuerzaY_l_p,
-		float *matriz_fuerzaZ_l_p,float *matriz_fuerzaX_v_p,float *matriz_fuerzaY_v_p,float *matriz_fuerzaZ_v_p,
-		pthread_barrier_t barrera_p,pthread_t* hilo_p){
+void crear_hilos(int N_p,int delta_tiempo_p,int pasos_p,int T_p,int proceso_p,pthread_t* hilo_p){
     //INICIALIZAR VARIABLES RECIBIDAS POR PARAMETRO A GLOBALES
     int i;
     N=N_p;
@@ -58,15 +54,6 @@ void crear_hilos(int N_p,int delta_tiempo_p,int pasos_p,int T_p,int proceso_p,cu
     delta_tiempo=delta_tiempo_p;
     pasos=pasos_p;
     proceso=proceso_p;
-    cuerpos=cuerpos_p;
-    matriz_fuerzaX_l = matriz_fuerzaX_l_p;
-    matriz_fuerzaY_l = matriz_fuerzaY_l_p;
-    matriz_fuerzaZ_l = matriz_fuerzaZ_l_p;
-    matriz_fuerzaX_v = matriz_fuerzaX_v_p;
-    matriz_fuerzaY_v = matriz_fuerzaY_v_p;
-    matriz_fuerzaZ_v = matriz_fuerzaZ_v_p;
-
-    barrera=barrera_p;
     hilo=hilo_p;
 
     	
@@ -98,20 +85,23 @@ int t2=T*2;
                 continue;
 
 	            	dif_X = cuerpos[cuerpo2].px - cuerpos[cuerpo1].px; //X2-X1
-			        dif_Y = cuerpos[cuerpo2].py - cuerpos[cuerpo1].py; //Y2-Y1
-			        dif_Z = cuerpos[cuerpo2].pz - cuerpos[cuerpo1].pz; //Z2-Z3
-                
-			        r = sqrt(dif_X*dif_X + dif_Y*dif_Y + dif_Z*dif_Z);
-
+		        dif_Y = cuerpos[cuerpo2].py - cuerpos[cuerpo1].py; //Y2-Y1
+		        dif_Z = cuerpos[cuerpo2].pz - cuerpos[cuerpo1].pz; //Z2-Z3
+        
+		        r = sqrt(dif_X*dif_X + dif_Y*dif_Y + dif_Z*dif_Z);
+			
 	                F = (G*cuerpos[cuerpo1].masa*cuerpos[cuerpo2].masa)/(r*r);
 
 	                dif_X *= F; 
-			        dif_Y *= F;
-			        dif_Z *= F;
-			
+			dif_Y *= F;
+		        dif_Z *= F;
+			//printf ("F(%f) = (G(%f)*cuerpos[cuerpo1].masa(%f)*cuerpos[cuerpo2].masa(%f))/(r(%f)*r(%f)) \n",F,G,cuerpos[cuerpo1].masa,cuerpos[cuerpo2].masa,r,r);
+			//printf("dif cuerpos l: X(%f) Y(%f) Z(%f)\n",dif_X,dif_Y,dif_Z);
 			matriz_fuerzaX_l[id*N+cuerpo1] += dif_X;
 	                matriz_fuerzaY_l[id*N+cuerpo1] += dif_Y;
 	                matriz_fuerzaZ_l[id*N+cuerpo1] += dif_Z;
+			//printf("fuerzas l: X(%f) Y(%f) Z(%f)\n",matriz_fuerzaX_l[id*N+cuerpo1],matriz_fuerzaY_l[id*N+cuerpo1],matriz_fuerzaZ_l[id*N+cuerpo1]);
+		
 
 	                matriz_fuerzaX_l[id*N+cuerpo2] -= dif_X;
 	                matriz_fuerzaY_l[id*N+cuerpo2] -= dif_Y;
@@ -126,12 +116,11 @@ void moverCuerpos(int id){
 	int t2=2*T;
 	for(cuerpo = id; cuerpo<N ; cuerpo+=t2){
 		for (i=0;i<T;i++){
-			printf("matrizfuerza_local : %f ",matriz_fuerzaX_l[i*N+cuerpo]);
-			printf("matrizfuerza_visitante : %f \n",matriz_fuerzaX_v[i*N+cuerpo]);
+			//printf("matrizfuerza_local : %f ",matriz_fuerzaX_l[i*N+cuerpo]);
+			//printf("matrizfuerza_visitante : %f \n",matriz_fuerzaX_v[i*N+cuerpo]);
 			fuerza_totalX[cuerpo] += (matriz_fuerzaX_l[i*N+cuerpo]+matriz_fuerzaX_v[i*N+cuerpo]);
 			
 			fuerza_totalY[cuerpo] += (matriz_fuerzaY_l[i*N+cuerpo]+matriz_fuerzaY_v[i*N+cuerpo]);
-			printf("4to print \n");
 			//fuerza_totalZ[i] += matriz_fuerzaZ[i*N+cuerpo];
 			matriz_fuerzaX_l[i*N+cuerpo] = 0.0;
 			matriz_fuerzaY_l[i*N+cuerpo] = 0.0;

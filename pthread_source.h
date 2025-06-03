@@ -33,11 +33,7 @@ extern pthread_barrier_t barrera;
 
 // Declaraciones de funciones
 void* gravitacion(void *arg);
-void crear_hilos(int N_p, int T_p, int delta_tiempo_p, int pasos_p, int proceso_p,
-                 cuerpo_t *cuerpos_p,
-                 float *matriz_fuerzaX_l_p, float *matriz_fuerzaY_l_p, float *matriz_fuerzaZ_l_p,
-                 float *matriz_fuerzaX_v_p, float *matriz_fuerzaY_v_p, float *matriz_fuerzaZ_v_p,
-                 pthread_barrier_t barrera_p,pthread_t* hilo_p);
+void crear_hilos(int N_p, int T_p, int delta_tiempo_p, int pasos_p, int proceso_p,pthread_t* hilo_p);
 void calcularFuerzas(int id);
 void moverCuerpos(int id);
 void cerrar_hilos();
