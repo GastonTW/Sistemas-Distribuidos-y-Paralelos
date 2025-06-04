@@ -1,4 +1,4 @@
-# N-Body Parallel Simulation
+# El problema de los N-Cuerpos
 
 Este proyecto implementa una simulación del problema de los N-cuerpos gravitacionales utilizando programación paralela. Se desarrollaron tres versiones del algoritmo:
 
