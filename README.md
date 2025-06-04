@@ -42,17 +42,17 @@ mpicc -o mpi_g10 MPI+Pthread_source.c -lm -lpthread
 
 ### Secuencial
 ```bash
-./nbody_secuencial <N> <DT> <Pasos>
+./secuencial_g10 <N> <DT> <Pasos>
 ```
 
 ### Pthreads
 ```bash
-./nbody_pthreads <N> <DT> <Pasos> <HILOS>
+./pthread_g10 <N> <DT> <Pasos> <HILOS>
 ```
 
 ### MPI + Pthreads
 ```bash
-mpirun -np 2 ./nbody_mpi <N> <DT> <Pasos> <HILOS_POR_PROCESO>
+mpirun -np 2 ./mpi_g10 <N> <DT> <Pasos> <HILOS_POR_PROCESO>
 ```
 
 > 📌 Parámetros:
