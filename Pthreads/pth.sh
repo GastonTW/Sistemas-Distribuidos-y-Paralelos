@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH –-exclusive
+#SBATCH --exclusive
 #SBATCH --partition=Blade
 #SBATCH -o /nethome/sdyp10/Pthreads/output.txt
 #SBATCH -e /nethome/sdyp10/Pthreads/errors.txt

@@ -46,7 +46,6 @@ float *matriz_fuerzaX_v, *matriz_fuerzaY_v, *matriz_fuerzaZ_v;
 cuerpo_t *cuerpos;
 int N, T, pasos, proceso;
 int delta_tiempo = 1.0f;
-pthread_mutex_t mutex1= PTHREAD_MUTEX_INITIALIZER, mutex2= PTHREAD_MUTEX_INITIALIZER;
 pthread_barrier_t barrera;
 pthread_t *hilo;
 
@@ -82,11 +81,8 @@ int main(int argc, char * argv[]) {
 	
     tTotal = funcion_mpi(rank,atoi(argv[1]),atof(argv[2]),atoi(argv[3]),atoi(argv[4]));
 
-	MPI_Finalize();
-	
-
 	printf("Tiempo en segundos: %f\n",tTotal);
-
+	MPI_Finalize();
 	
     return(0);
 }
@@ -219,7 +215,6 @@ void inicializarCuerpos(cuerpo_t *cuerpos,int N){
 }
 
 void finalizar(){
-	
 	free(fuerza_totalX);
 	free(fuerza_totalY);
 	free(fuerza_totalZ);
@@ -230,8 +225,6 @@ void finalizar(){
 	free(matriz_fuerzaY_v);
 	free(matriz_fuerzaZ_v);
 	free(hilo);
-	pthread_mutex_destroy(&mutex1);
-	pthread_mutex_destroy(&mutex2);
 	pthread_barrier_destroy(&barrera);
 	free(cuerpos);
 }
@@ -288,7 +281,6 @@ double funcion_mpi(int rank,int N_p,int dt_p,int pasos_p,int T_p){
 	}
 
    	tFin =	dwalltime();
-	if (rank==0) printf("- Tiempo en segundos: %f\n",tFin-tIni);
 	finalizar();
 	return tFin - tIni;
 }
@@ -301,50 +293,42 @@ void procesoA(){
 	crear_hilos(0);
 
 	for(paso=0; paso<pasos;paso++){
-		pthread_barrier_wait(&barrera);
+		pthread_barrier_wait(&barrera);// Esperar a los hilos
 		MPI_Send(matriz_fuerzaX_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
 		MPI_Send(matriz_fuerzaY_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
 		MPI_Send(matriz_fuerzaZ_l, nt, MPI_FLOAT, 1, paso, MPI_COMM_WORLD);
-        	MPI_Recv(matriz_fuerzaX_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(matriz_fuerzaX_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Recv(matriz_fuerzaY_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Recv(matriz_fuerzaZ_v, nt, MPI_FLOAT, 1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		
-		pthread_barrier_wait(&barrera);
-		pthread_barrier_wait(&barrera);
+		pthread_barrier_wait(&barrera);// Avisar que termino la comunicacion
+		pthread_barrier_wait(&barrera);// Esperar a los hilos
 		MPI_Allgather(cuerpos, n2 * sizeof(cuerpo_t), MPI_BYTE,cuerpos, n2 * sizeof(cuerpo_t), MPI_BYTE, MPI_COMM_WORLD);
-
-		
-		pthread_barrier_wait(&barrera);
+		pthread_barrier_wait(&barrera);// Avisar que termino la comunicacion
 		
 	}
-
 	cerrar_hilos();
-
 }
 
 void procesoB(){
 	int i,j,c,paso;
    	int nt = N * T;
 	unsigned n2=N/2;
-	pthread_mutex_lock(&mutex1);
-	pthread_mutex_lock(&mutex2);
 	crear_hilos(1);
 	for(paso=0; paso<pasos;paso++){
 		
-		pthread_barrier_wait(&barrera);
+		pthread_barrier_wait(&barrera);// Esperar a los hilos
 		MPI_Recv(matriz_fuerzaX_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Recv(matriz_fuerzaY_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Recv(matriz_fuerzaZ_v, nt, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Send(matriz_fuerzaX_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
 		MPI_Send(matriz_fuerzaY_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
 		MPI_Send(matriz_fuerzaZ_l, nt, MPI_FLOAT, 0, paso, MPI_COMM_WORLD);
-		pthread_barrier_wait(&barrera);
-		pthread_barrier_wait(&barrera);
+		pthread_barrier_wait(&barrera);// Avisar que termino la comunicacion
+		pthread_barrier_wait(&barrera);// Esperar a los hilos
 		MPI_Allgather((cuerpos+n2), n2 * sizeof(cuerpo_t), MPI_BYTE,cuerpos, n2 * sizeof(cuerpo_t), MPI_BYTE, MPI_COMM_WORLD);
-		pthread_barrier_wait(&barrera);
+		pthread_barrier_wait(&barrera);// Avisar que termino la comunicacion
     }
     cerrar_hilos();
-
 }
 
 void crear_hilos(int proceso_p){
@@ -363,17 +347,16 @@ void cerrar_hilos(){
 }
 
 void *gravitacion(void *arg){
-    //int id=(int*)arg; //cambie esto
     int id = (int*)arg;
     int paso;
     for(paso=0; paso<pasos;paso++){
         //CALCULAR LAS FUERZAS Q LE TOCARON A LOS HILOS
         calcularFuerzas(id);
-        pthread_barrier_wait(&barrera);
-        pthread_barrier_wait(&barrera);
+        pthread_barrier_wait(&barrera); //Espera a todos los hilos
+        pthread_barrier_wait(&barrera); //Espera comunicacion MPI
         moverCuerpos(id);
-        pthread_barrier_wait(&barrera); //barrera
-        pthread_barrier_wait(&barrera);
+        pthread_barrier_wait(&barrera); //Espera a todos los hilos
+        pthread_barrier_wait(&barrera); //Espera comunicacion MPI
     }
 }
 
@@ -417,7 +400,7 @@ void calcularFuerzas(int id){
 void moverCuerpos(int id){
  	int cuerpo,i,j;
 	int n2t=N/(2*T);
-	int inicio=((id%2)*(N/2))+(((id%(2*T))-(id%2))*(N/(4*T)));
+	int inicio=((id%2)*(N/2))+(((id%(2*T))-(id%2))*(N/(4*T))); // Para que los cuerpos calculados sean contiguos para cada proceso
 	int fin=inicio+(N/(4*T));
 	for(cuerpo = inicio; cuerpo<fin ; cuerpo++){
 		for (i=0;i<T;i++){
