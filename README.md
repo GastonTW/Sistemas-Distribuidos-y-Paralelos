@@ -9,28 +9,33 @@ Este proyecto implementa una simulación del problema de los N-cuerpos gravitaci
 ## 📁 Estructura del repositorio
 
 ```
-├── secuencial.c            # Implementación base secuencial
-├── pthreads.c              # Implementación con hilos (Pthreads)
-├── MPI+Pthread_source.c    # Implementación híbrida (MPI + Pthreads)
-├── Informe-Grupo-10.pdf    # Informe final del proyecto (análisis y resultados)
-├── README.md               # Este archivo
+├── Secuencial # Implementación base secuencial
+|   ├─ secuencial.c
+|   ├─ sec.sh   
+├── Pthreads # Implementación con hilos (Pthreads)
+|   ├─ pthreads.c
+|   ├─ pth.sh           
+├── MPI+Pthread # Implementación híbrida (MPI + Pthreads)
+|   ├─ MPI+Pthread_source.c
+|   ├─ mpi.sh  
+├── Informe-Grupo-10.pdf # Informe final del proyecto
 ```
 
 ## 🛠️ Compilación
 
 ### Secuencial
 ```bash
-gcc -o nbody_secuencial secuencial.c -lm
+gcc -o secuencial_g10 secuencial.c -lm
 ```
 
 ### Pthreads
 ```bash
-gcc -o nbody_pthreads pthreads.c -lpthread -lm
+gcc -o pthread_g10 pthreads.c -lpthread -lm
 ```
 
 ### MPI + Pthreads
 ```bash
-mpicc -o nbody_mpi MPI+Pthread_source.c -lpthread -lm
+mpicc -o mpi_g10 MPI+Pthread_source.c -lm -lpthread
 ```
 
 ## 🚀 Ejecución
@@ -47,7 +52,7 @@ mpicc -o nbody_mpi MPI+Pthread_source.c -lpthread -lm
 
 ### MPI + Pthreads
 ```bash
-mpirun -np <PROCESOS> ./nbody_mpi <N> <DT> <Pasos> <HILOS_POR_PROCESO>
+mpirun -np 2 ./nbody_mpi <N> <DT> <Pasos> <HILOS_POR_PROCESO>
 ```
 
 > 📌 Parámetros:
