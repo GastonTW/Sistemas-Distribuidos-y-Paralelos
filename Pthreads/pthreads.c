@@ -1,7 +1,7 @@
 // Compilar:
 //		gcc -pthread -o salida archivo.c
 // Ejecutar:
-//		./n_body_simple_NOGL <nro de cuerpos> <DT> <Pasos> <hilos>
+//		./salida <nro de cuerpos> <DT> <Pasos> <hilos>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
